@@ -1,3 +1,3 @@
-frontpage-server
-frontpage-cli
+/frontpage-server
+/frontpage-cli
 *.exe
