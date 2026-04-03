@@ -18,7 +18,7 @@ func NewHomeHandler(store *data.Store, tmpl *template.Template) *HomeHandler {
 
 func (h *HomeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	apps := h.store.Apps()
-	err := h.tmpl.ExecuteTemplate(w, "home.html", map[string]any{
+	err := h.tmpl.ExecuteTemplate(w, "layout.html", map[string]any{
 		"Apps": apps,
 	})
 	if err != nil {

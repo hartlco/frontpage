@@ -24,7 +24,7 @@ func (h *AppHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := h.tmpl.ExecuteTemplate(w, "app.html", map[string]any{
+	err := h.tmpl.ExecuteTemplate(w, "layout.html", map[string]any{
 		"App": app,
 	})
 	if err != nil {

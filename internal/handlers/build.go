@@ -53,7 +53,7 @@ func (h *BuildHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		qrTarget = downloadURL
 	}
 
-	err := h.tmpl.ExecuteTemplate(w, "build.html", map[string]any{
+	err := h.tmpl.ExecuteTemplate(w, "layout.html", map[string]any{
 		"App":        app,
 		"Build":      build,
 		"InstallURL": installURL,

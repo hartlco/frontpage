@@ -19,7 +19,7 @@ func main() {
 	store := data.NewStore(cfg.DataDir)
 	store.StartSync(cfg.SyncInterval)
 
-	tmpl := loadTemplates()
+	templates := loadTemplates()
 
 	mux := http.NewServeMux()
 
@@ -28,9 +28,9 @@ func main() {
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir(staticDir))))
 
 	// Routes
-	mux.Handle("GET /{$}", handlers.NewHomeHandler(store, tmpl))
-	mux.Handle("GET /apps/{slug}", handlers.NewAppHandler(store, tmpl))
-	mux.Handle("GET /apps/{slug}/builds/{version}", handlers.NewBuildHandler(store, tmpl, cfg))
+	mux.Handle("GET /{$}", handlers.NewHomeHandler(store, templates["home"]))
+	mux.Handle("GET /apps/{slug}", handlers.NewAppHandler(store, templates["app"]))
+	mux.Handle("GET /apps/{slug}/builds/{version}", handlers.NewBuildHandler(store, templates["build"], cfg))
 	mux.Handle("GET /apps/{slug}/builds/{version}/download/{filename}", handlers.NewDownloadHandler(store))
 	mux.Handle("GET /apps/{slug}/builds/{version}/manifest.plist", handlers.NewManifestHandler(store, cfg))
 	mux.Handle("GET /apps/{slug}/builds/{version}/qr.png", handlers.NewQRHandler(store, cfg))
@@ -43,7 +43,7 @@ func main() {
 	}
 }
 
-func loadTemplates() *template.Template {
+func loadTemplates() map[string]*template.Template {
 	tmplDir := findDir("templates")
 	funcMap := template.FuncMap{
 		"string": func(v any) string {
@@ -79,11 +79,20 @@ func loadTemplates() *template.Template {
 		},
 	}
 
-	tmpl, err := template.New("").Funcs(funcMap).ParseGlob(filepath.Join(tmplDir, "*.html"))
-	if err != nil {
-		log.Fatalf("failed to parse templates: %v", err)
+	layoutPath := filepath.Join(tmplDir, "layout.html")
+
+	pages := []string{"home", "app", "build"}
+	templates := make(map[string]*template.Template)
+	for _, page := range pages {
+		t := template.Must(
+			template.New("").Funcs(funcMap).ParseFiles(
+				layoutPath,
+				filepath.Join(tmplDir, page+".html"),
+			),
+		)
+		templates[page] = t
 	}
-	return tmpl
+	return templates
 }
 
 func formatFloat(f float64) string {
