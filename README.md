@@ -70,7 +70,7 @@ frontpage-cli publish \
   --build 87 \
   --file ./build/MyApp.ipa \
   --notes "Bug fixes and performance improvements" \
-  --base-url https://builds.hartl.co
+  --base-url https://builds.example.com
 
 # Publish a macOS build (also generates appcast.xml for Sparkle)
 frontpage-cli publish \
@@ -81,7 +81,7 @@ frontpage-cli publish \
   --build 150 \
   --file ./build/MyApp.dmg \
   --notes "New features" \
-  --base-url https://builds.hartl.co
+  --base-url https://builds.example.com
 ```
 
 ### CLI Flags
@@ -94,7 +94,7 @@ frontpage-cli publish \
 | `--version` | Yes | Semantic version (e.g. `1.2.0`) |
 | `--build` | Yes | Build number |
 | `--file` | Yes | Path to `.ipa`, `.apk`, or `.dmg` |
-| `--base-url` | Yes | Server URL (e.g. `https://builds.hartl.co`) |
+| `--base-url` | Yes | Server URL (e.g. `https://builds.example.com`) |
 | `--notes` | No | Release notes |
 | `--name` | No | Display name (defaults to slug, used for new apps) |
 | `--bundle-id` | No | Bundle identifier (used for new apps) |
@@ -116,42 +116,27 @@ Environment variables:
 ### Prerequisites
 
 - Ubuntu VPS with Docker
-- A domain pointing to the VPS (e.g. `builds.hartl.co`)
+- A domain pointing to the VPS (e.g. `builds.example.com`)
 - [Caddy](https://caddyserver.com/) for automatic HTTPS (required for iOS OTA)
 
 ### Setup
 
-1. **Create a deploy key** for the data repo:
-
-```bash
-ssh-keygen -t ed25519 -f ~/.ssh/frontpage-data-deploy -N ""
-# Add the public key to github.com/hartlco/frontpage-data → Settings → Deploy keys
-```
-
-2. **Configure SSH:**
-
-```
-# ~/.ssh/config
-Host github-frontpage
-    HostName github.com
-    User git
-    IdentityFile ~/.ssh/frontpage-data-deploy
-```
-
-3. **Clone and start:**
+1. **Clone and start:**
 
 ```bash
 mkdir -p /srv/frontpage && cd /srv/frontpage
-git clone git@github-frontpage:hartlco/frontpage-data.git
+git clone https://github.com/hartlco/frontpage-data.git
 # Download docker-compose.yml, then:
 docker compose up -d
 ```
 
-4. **Configure Caddy** for HTTPS:
+The data repo is public, so no SSH keys are needed — the server pulls over HTTPS. If you make the data repo private, you'll need to set up a deploy key and clone via SSH instead.
+
+2. **Configure Caddy** for HTTPS:
 
 ```
 # /etc/caddy/Caddyfile
-builds.hartl.co {
+builds.example.com {
     reverse_proxy localhost:8080
 }
 ```
@@ -165,7 +150,7 @@ iOS OTA installation requires HTTPS — Caddy handles this automatically via Let
 Point your app's Sparkle `SUFeedURL` to:
 
 ```
-https://builds.hartl.co/apps/{your-app-slug}/appcast.xml
+https://builds.example.com/apps/{your-app-slug}/appcast.xml
 ```
 
 The CLI generates `appcast.xml` automatically when publishing macOS builds.
