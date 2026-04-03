@@ -7,7 +7,8 @@ RUN CGO_ENABLED=0 go build -o /frontpage-server ./cmd/frontpage-server
 RUN CGO_ENABLED=0 go build -o /frontpage-cli ./cmd/frontpage-cli
 
 FROM alpine:3.19
-RUN apk add --no-cache git git-lfs ca-certificates tzdata
+RUN apk add --no-cache git git-lfs ca-certificates tzdata && \
+    git config --global --add safe.directory /data
 WORKDIR /app
 COPY --from=builder /frontpage-server .
 COPY --from=builder /frontpage-cli /usr/local/bin/frontpage-cli
