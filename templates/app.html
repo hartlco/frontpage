@@ -1,0 +1,58 @@
+{{template "layout" .}}
+
+{{define "title"}}{{.App.Name}} — Frontpage{{end}}
+
+{{define "content"}}
+<div class="app-header">
+    <div class="app-icon app-icon-large">
+        {{if .App.Icon}}
+        <img src="/apps/{{.App.Slug}}/icon" alt="{{.App.Name}}">
+        {{else}}
+        <div class="app-icon-placeholder">{{slice .App.Name 0 1}}</div>
+        {{end}}
+    </div>
+    <div>
+        <h1>{{.App.Name}}</h1>
+        <span class="platform-badge platform-{{.App.Platform}}">{{platformIcon .App.Platform}}</span>
+        {{if .App.Description}}<p>{{.App.Description}}</p>{{end}}
+        <p class="meta">{{.App.BundleID}}</p>
+    </div>
+</div>
+
+{{if eq (string .App.Platform) "macos"}}
+<div class="sparkle-info">
+    <h3>Sparkle Feed</h3>
+    <code class="feed-url">/apps/{{.App.Slug}}/appcast.xml</code>
+</div>
+{{end}}
+
+<h2>Builds</h2>
+{{if .App.Builds}}
+<table class="builds-table">
+    <thead>
+        <tr>
+            <th>Version</th>
+            <th>Build</th>
+            <th>Date</th>
+            <th>Size</th>
+            <th>Notes</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .App.Builds}}
+        <tr>
+            <td><a href="/apps/{{.App.Slug}}/builds/{{.VersionString}}">{{.Version}}</a></td>
+            <td>{{.BuildNumber}}</td>
+            <td>{{.Date.Format "2006-01-02"}}</td>
+            <td>{{humanSize .Size}}</td>
+            <td class="notes-preview">{{if .Notes}}{{.Notes}}{{else}}&mdash;{{end}}</td>
+            <td><a href="/apps/{{.App.Slug}}/builds/{{.VersionString}}" class="btn btn-small">Details</a></td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+{{else}}
+<p class="empty">No builds yet.</p>
+{{end}}
+{{end}}

@@ -1,0 +1,8 @@
+{
+  "name": "Demo iOS App",
+  "slug": "demo-ios",
+  "platform": "ios",
+  "bundle_id": "co.hartl.demo.ios",
+  "description": "A demo iOS application",
+  "icon": ""
+}

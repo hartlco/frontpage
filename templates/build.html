@@ -1,0 +1,56 @@
+{{template "layout" .}}
+
+{{define "title"}}{{.App.Name}} {{.Build.Version}} ({{.Build.BuildNumber}}) — Frontpage{{end}}
+
+{{define "content"}}
+<nav class="breadcrumb">
+    <a href="/">Apps</a> &rsaquo;
+    <a href="/apps/{{.App.Slug}}">{{.App.Name}}</a> &rsaquo;
+    <span>{{.Build.Version}} ({{.Build.BuildNumber}})</span>
+</nav>
+
+<div class="build-detail">
+    <div class="build-main">
+        <h1>{{.App.Name}} {{.Build.Version}}</h1>
+        <div class="build-meta">
+            <span class="platform-badge platform-{{.App.Platform}}">{{platformIcon .App.Platform}}</span>
+            <span>Build {{.Build.BuildNumber}}</span>
+            <span>{{.Build.Date.Format "January 2, 2006 15:04"}}</span>
+            <span>{{humanSize .Build.Size}}</span>
+            {{if .Build.MinOSVersion}}<span>Min OS: {{.Build.MinOSVersion}}</span>{{end}}
+        </div>
+
+        {{if .Build.Notes}}
+        <div class="release-notes">
+            <h3>Release Notes</h3>
+            <p>{{.Build.Notes}}</p>
+        </div>
+        {{end}}
+
+        <div class="install-section">
+            {{if eq (string .App.Platform) "ios"}}
+            <h3>Install on iOS</h3>
+            <p>Open this page on your iPhone and tap the button below:</p>
+            <a href="{{.InstallURL}}" class="btn btn-install">Install on Device</a>
+            <p class="install-hint">Your device must be registered in the provisioning profile.</p>
+
+            {{else if eq (string .App.Platform) "android"}}
+            <h3>Install on Android</h3>
+            <a href="{{.DownloadURL}}" class="btn btn-install">Download APK</a>
+            <p class="install-hint">You may need to enable "Install from unknown sources" in Settings.</p>
+
+            {{else if eq (string .App.Platform) "macos"}}
+            <h3>Download</h3>
+            <a href="{{.DownloadURL}}" class="btn btn-install">Download DMG</a>
+            {{end}}
+        </div>
+    </div>
+
+    {{if .QRTarget}}
+    <div class="build-sidebar">
+        <h3>Scan to install</h3>
+        <img src="{{.QRURL}}" alt="QR Code" class="qr-code">
+    </div>
+    {{end}}
+</div>
+{{end}}

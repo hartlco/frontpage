@@ -1,0 +1,8 @@
+{
+  "name": "Demo Mac App",
+  "slug": "demo-macos",
+  "platform": "macos",
+  "bundle_id": "co.hartl.demo",
+  "description": "A demo macOS application",
+  "icon": ""
+}

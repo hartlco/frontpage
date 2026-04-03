@@ -1,0 +1,8 @@
+{
+  "name": "Demo Android App",
+  "slug": "demo-android",
+  "platform": "android",
+  "bundle_id": "co.hartl.demo.android",
+  "description": "A demo Android application",
+  "icon": ""
+}

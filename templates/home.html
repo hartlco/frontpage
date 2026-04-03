@@ -1,0 +1,32 @@
+{{template "layout" .}}
+
+{{define "title"}}Frontpage{{end}}
+
+{{define "content"}}
+<h1>Apps</h1>
+{{if .Apps}}
+<div class="app-grid">
+    {{range .Apps}}
+    <a href="/apps/{{.Slug}}" class="app-card">
+        <div class="app-icon">
+            {{if .Icon}}
+            <img src="/apps/{{.Slug}}/icon" alt="{{.Name}}">
+            {{else}}
+            <div class="app-icon-placeholder">{{slice .Name 0 1}}</div>
+            {{end}}
+        </div>
+        <div class="app-info">
+            <h2>{{.Name}}</h2>
+            <span class="platform-badge platform-{{.Platform}}">{{platformIcon .Platform}}</span>
+            {{if .Description}}<p>{{.Description}}</p>{{end}}
+            {{if .Builds}}
+            <span class="build-count">{{len .Builds}} build{{if gt (len .Builds) 1}}s{{end}}</span>
+            {{end}}
+        </div>
+    </a>
+    {{end}}
+</div>
+{{else}}
+<p class="empty">No apps yet. Use <code>frontpage publish</code> to add your first build.</p>
+{{end}}
+{{end}}
