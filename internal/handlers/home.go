@@ -18,8 +18,11 @@ func NewHomeHandler(store *data.Store, tmpl *template.Template) *HomeHandler {
 
 func (h *HomeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	apps := h.store.Apps()
+	refresh := r.URL.Query().Get("refresh")
 	err := h.tmpl.ExecuteTemplate(w, "layout.html", map[string]any{
-		"Apps": apps,
+		"Apps":           apps,
+		"RefreshSuccess": refresh == "success",
+		"RefreshError":   refresh == "error",
 	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

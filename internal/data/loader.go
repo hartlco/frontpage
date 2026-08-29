@@ -11,6 +11,7 @@ import (
 
 type Store struct {
 	mu      sync.RWMutex
+	syncMu  sync.Mutex
 	apps    map[string]*App
 	dataDir string
 }

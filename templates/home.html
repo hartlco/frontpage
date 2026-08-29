@@ -1,7 +1,17 @@
 {{define "title"}}Frontpage{{end}}
 
 {{define "content"}}
-<h1>Apps</h1>
+<div class="page-heading">
+    <h1>Apps</h1>
+    <form action="/sync" method="post">
+        <button type="submit" class="btn">Fetch latest builds</button>
+    </form>
+</div>
+{{if .RefreshSuccess}}
+<p class="notice notice-success" role="status">Latest builds fetched.</p>
+{{else if .RefreshError}}
+<p class="notice notice-error" role="alert">Couldn&rsquo;t fetch the latest builds. Check the server logs for details.</p>
+{{end}}
 {{if .Apps}}
 <div class="app-grid">
     {{range .Apps}}

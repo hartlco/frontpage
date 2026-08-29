@@ -29,6 +29,7 @@ func main() {
 
 	// Routes
 	mux.Handle("GET /{$}", handlers.NewHomeHandler(store, templates["home"]))
+	mux.Handle("POST /sync", handlers.NewSyncHandler(store))
 	mux.Handle("GET /apps/{slug}", handlers.NewAppHandler(store, templates["app"]))
 	mux.Handle("GET /apps/{slug}/builds/{version}", handlers.NewBuildHandler(store, templates["build"], cfg))
 	mux.Handle("GET /apps/{slug}/builds/{version}/download/{filename}", handlers.NewDownloadHandler(store))
