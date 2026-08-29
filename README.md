@@ -11,7 +11,7 @@ Serve iOS, Android, and macOS builds to your testers from a clean web UI. No dat
 - **Android APK** — Direct download with QR code for easy install
 - **macOS + Sparkle** — Serves `appcast.xml` for automatic updates via Sparkle framework
 - **QR Codes** — Auto-generated QR codes for iOS and Android builds
-- **Git-based storage** — Your builds live in a separate GitHub repo (with Git LFS). The server syncs via `git pull`
+- **Git-based storage** — Your builds live in a separate GitHub repo (with Git LFS). The server syncs via `git pull`, on a schedule or from the web UI
 - **CLI tool** — `frontpage-cli publish` structures builds, generates metadata, and pushes to the data repo
 - **Docker** — Single container, easy to deploy
 
