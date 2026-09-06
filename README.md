@@ -70,6 +70,7 @@ frontpage-cli publish \
   --build 87 \
   --file ./build/MyApp.ipa \
   --notes "Bug fixes and performance improvements" \
+  --keep-latest \
   --base-url https://builds.example.com
 
 # Publish a macOS build (also generates appcast.xml for Sparkle)
@@ -99,6 +100,21 @@ frontpage-cli publish \
 | `--name` | No | Display name (defaults to slug, used for new apps) |
 | `--bundle-id` | No | Bundle identifier (used for new apps) |
 | `--min-os` | No | Minimum OS version |
+| `--keep-latest` | No | Remove older builds and prune their local Git LFS data after publishing |
+
+`--keep-latest` keeps the build being published and deletes every other build
+directory for the same app before committing. Because publishing stages with
+`git add -A`, the old binaries are removed from the current Git tree and remote
+branch by the same commit. After the push succeeds, the CLI runs a remote-verified
+`git lfs prune --force` to remove old LFS payloads from the local `.git/lfs`
+cache, reducing the total size of the checkout immediately. Existing Git history
+is not rewritten.
+
+This local compaction applies to the checkout passed via `--data-dir`. Other
+clones, including a server clone, can reclaim their own cache with
+`git lfs prune --force --verify-remote`. Binaries committed directly to Git
+instead of Git LFS remain in Git history; shrinking those requires a history
+rewrite or a fresh shallow clone.
 
 ## Configuration
 

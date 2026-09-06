@@ -41,26 +41,29 @@ func (h *BuildHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	manifestURL := h.cfg.BaseURL + build.ManifestPath()
-	installURL := "itms-services://?action=download-manifest&url=" + manifestURL
+	// html/template blocks unknown URL schemes in href attributes by default.
+	// This URL is assembled entirely from server-owned configuration and paths,
+	// so mark it as trusted to preserve the iOS itms-services scheme.
+	installURL := template.URL("itms-services://?action=download-manifest&url=" + manifestURL)
 	downloadURL := h.cfg.BaseURL + build.DownloadPath()
 	qrURL := build.QRPath()
 
 	var qrTarget string
 	switch app.Platform {
 	case data.PlatformIOS:
-		qrTarget = installURL
+		qrTarget = string(installURL)
 	case data.PlatformAndroid:
 		qrTarget = downloadURL
 	}
 
 	err := h.tmpl.ExecuteTemplate(w, "layout.html", map[string]any{
-		"App":        app,
-		"Build":      build,
-		"InstallURL": installURL,
+		"App":         app,
+		"Build":       build,
+		"InstallURL":  installURL,
 		"DownloadURL": downloadURL,
-		"QRURL":      qrURL,
-		"QRTarget":   qrTarget,
-		"BaseURL":    h.cfg.BaseURL,
+		"QRURL":       qrURL,
+		"QRTarget":    qrTarget,
+		"BaseURL":     h.cfg.BaseURL,
 	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

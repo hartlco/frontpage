@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"time"
 
 	"github.com/hartlco/frontpage/internal/sparkle"
@@ -32,6 +33,7 @@ func main() {
 	bundleID := fs.String("bundle-id", "", "Bundle ID (for new apps)")
 	name := fs.String("name", "", "Display name (for new apps, defaults to app slug)")
 	minOS := fs.String("min-os", "", "Minimum OS version")
+	keepLatest := fs.Bool("keep-latest", false, "Remove all older builds for this app")
 
 	fs.Parse(os.Args[2:])
 
@@ -108,6 +110,20 @@ func main() {
 		fmt.Println("Created app.json")
 	}
 
+	// Remove older builds only after the new artifact and metadata have been
+	// written successfully. git add -A below stages the deleted artifacts too.
+	if *keepLatest {
+		removed, err := removeOlderBuilds(filepath.Join(appDir, "builds"), filepath.Base(versionDir))
+		if err != nil {
+			log.Fatalf("failed to remove older builds: %v", err)
+		}
+		if len(removed) == 0 {
+			fmt.Println("No older builds to remove")
+		} else {
+			fmt.Printf("Removed older builds: %v\n", removed)
+		}
+	}
+
 	// Generate appcast.xml for macOS
 	if *platform == "macos" {
 		appcastPath := filepath.Join(appDir, "appcast.xml")
@@ -152,6 +168,42 @@ func main() {
 		log.Fatalf("git push failed: %v\n%s", err, output)
 	}
 	fmt.Println("Pushed to remote")
+
+	if *keepLatest {
+		if output, err := pruneLFS(*dataDir); err != nil {
+			log.Printf("warning: build was published, but the local Git LFS cache could not be pruned: %v\n%s", err, output)
+		} else {
+			fmt.Println("Pruned local Git LFS cache")
+		}
+	}
+}
+
+func removeOlderBuilds(buildsDir, keep string) ([]string, error) {
+	entries, err := os.ReadDir(buildsDir)
+	if err != nil {
+		return nil, err
+	}
+
+	var removed []string
+	for _, entry := range entries {
+		if !entry.IsDir() || entry.Name() == keep {
+			continue
+		}
+		if err := os.RemoveAll(filepath.Join(buildsDir, entry.Name())); err != nil {
+			return removed, err
+		}
+		removed = append(removed, entry.Name())
+	}
+	sort.Strings(removed)
+	return removed, nil
+}
+
+func pruneLFS(dataDir string) ([]byte, error) {
+	// The push must complete first so Git LFS knows the removed payloads have a
+	// remote copy. --force bypasses the recent-object retention window, while
+	// --verify-remote checks the remote before deleting reachable local objects.
+	cmd := exec.Command("git", "-C", dataDir, "lfs", "prune", "--force", "--verify-remote")
+	return cmd.CombinedOutput()
 }
 
 func copyFile(src, dst string) error {
