@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"mime"
 	"net/http"
 	"path/filepath"
+	"strings"
 
 	"github.com/hartlco/frontpage/internal/data"
 )
@@ -39,6 +41,12 @@ func (h *DownloadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	filePath := filepath.Join(app.DataDir, "builds", version, filename)
-	w.Header().Set("Content-Disposition", "attachment; filename="+filename)
+	w.Header().Set("Content-Disposition", mime.FormatMediaType("attachment", map[string]string{"filename": filename}))
+	if strings.EqualFold(filepath.Ext(filename), ".apk") {
+		// APKs are ZIP containers, but advertising application/zip makes some
+		// Android browsers append .zip and prevents opening the installer.
+		w.Header().Set("Content-Type", "application/vnd.android.package-archive")
+	}
+	w.Header().Set("X-Content-Type-Options", "nosniff")
 	http.ServeFile(w, r, filePath)
 }
