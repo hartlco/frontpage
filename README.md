@@ -11,14 +11,14 @@ Serve iOS, Android, and macOS builds to your testers from a clean web UI. No dat
 - **Android APK** — Direct download with QR code for easy install
 - **macOS + Sparkle** — Serves `appcast.xml` for automatic updates via Sparkle framework
 - **QR Codes** — Auto-generated QR codes for iOS and Android builds
-- **Git-based storage** — Your builds live in a separate GitHub repo (with Git LFS). The server syncs via `git pull`, on a schedule or from the web UI
+- **Git-based storage** — Your builds live in a separate GitHub repo (with Git LFS). The server keeps only the latest checkout, syncing on a schedule or from the web UI
 - **CLI tool** — `frontpage-cli publish` structures builds, generates metadata, and pushes to the data repo
 - **Docker** — Single container, easy to deploy
 
 ## Architecture
 
 ```
-┌──────────────┐     git push      ┌──────────────────┐     git pull      ┌──────────────┐
+┌──────────────┐     git push      ┌──────────────────┐   shallow fetch   ┌──────────────┐
 │  Your CI /   │ ──────────────▶   │  frontpage-data   │  ◀────────────── │  Frontpage   │
 │  local build │   (via CLI)       │  (GitHub repo)    │    (every 15m)   │  Server      │
 └──────────────┘                   └──────────────────┘                   └──────┬───────┘
@@ -44,8 +44,8 @@ The server defaults to `./testdata` as the data directory, which includes demo a
 ### Deploy with Docker
 
 ```bash
-# Clone the data repo next to docker-compose.yml
-git clone git@github.com:hartlco/frontpage-data.git
+# Create a dedicated server cache next to docker-compose.yml
+git clone --depth=1 --single-branch --no-tags https://github.com/hartlco/frontpage-data.git
 
 # Start the server
 docker compose up -d
@@ -111,11 +111,9 @@ branch by the same commit. After the push succeeds, the CLI runs a remote-verifi
 cache, reducing the total size of the checkout immediately. Existing Git history
 is not rewritten.
 
-This local compaction applies to the checkout passed via `--data-dir`. Other
-clones, including a server clone, can reclaim their own cache with
-`git lfs prune --force --verify-remote`. Binaries committed directly to Git
-instead of Git LFS remain in Git history; shrinking those requires a history
-rewrite or a fresh shallow clone.
+This publishing compaction applies to the checkout passed via `--data-dir`.
+Keep that publishing clone separate from the server's data directory: the
+server automatically discards local history during synchronization.
 
 ## Configuration
 
@@ -123,12 +121,40 @@ Environment variables:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `FRONTPAGE_DATA_DIR` | `./testdata` | Path to the data repo |
+| `FRONTPAGE_DATA_DIR` | `./testdata` | Path to a dedicated server clone of the data repo |
 | `FRONTPAGE_BASE_URL` | `http://localhost:8080` | Public URL of the server |
-| `FRONTPAGE_SYNC_INTERVAL` | `900` | Seconds between `git pull` (0 to disable) |
+| `FRONTPAGE_SYNC_INTERVAL` | `900` | Seconds between latest-checkout syncs (0 disables the timer; startup/manual sync still run) |
 | `FRONTPAGE_PORT` | `8080` | HTTP listen port |
 
 ## Deployment
+
+### Server storage
+
+The mounted data directory is a read-only deployment cache of its configured
+upstream branch. Each startup, scheduled sync, or **Fetch latest builds** request:
+
+1. Fetches just the branch tip with `--depth=1`, without tags or other branches.
+2. Downloads the current revision's LFS artifacts before changing the served files.
+3. Checks out that revision and reloads the app listings.
+4. Removes obsolete local tags, remote refs and reflogs, prunes old LFS payloads,
+   and runs Git garbage collection to delete historical binaries from disk.
+
+Existing full server clones are compacted automatically on their first successful
+sync after upgrading. GitHub history and the separate publishing clone are not
+changed. Only builds present in the current data-repo tree remain hosted; build
+retention is still controlled when publishing or cleaning up that tree.
+
+Use a standalone, clean clone with one local branch tracking a remote branch.
+Local edits, untracked files, unpublished commits, extra local branches, stashes,
+linked worktrees and shared/custom LFS storage cause sync to stop before fetching
+or pruning. Local tags and other remote-tracking refs are disposable in this
+server cache. Do not run publishing or other Git commands in it while Frontpage
+is running.
+
+The remaining storage includes the working files, Git objects for the current
+commit, and LFS payloads needed by that checkout. Historical build binaries no
+longer accumulate in the server's Git history or LFS cache. A failed Git fetch or
+LFS download leaves the previously served checkout available for retry.
 
 ### Prerequisites
 
@@ -142,7 +168,7 @@ Environment variables:
 
 ```bash
 mkdir -p /srv/frontpage && cd /srv/frontpage
-git clone https://github.com/hartlco/frontpage-data.git
+git clone --depth=1 --single-branch --no-tags https://github.com/hartlco/frontpage-data.git
 # Download docker-compose.yml, then:
 docker compose up -d
 ```
