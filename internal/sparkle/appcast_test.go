@@ -38,11 +38,14 @@ func TestPublishedMacSignatureSurvivesAppcastGeneration(t *testing.T) {
 			t.Fatal(err)
 		}
 		if element, ok := token.(xml.StartElement); ok && element.Name.Local == "enclosure" {
-			attrs := map[string]string{}
+			attrs := map[xml.Name]string{}
 			for _, attr := range element.Attr {
-				attrs[attr.Name.Local] = attr.Value
+				attrs[attr.Name] = attr.Value
 			}
-			if attrs["edDSASignature"] != signature || attrs["length"] != "1234" || attrs["url"] != "https://builds.example.com/apps/app/builds/1.2.0-9/download/App.dmg" {
+			// Sparkle consumes this exact namespace and attribute, as emitted
+			// by its sign_update tool; a different name means "unsigned".
+			signatureName := xml.Name{Space: "http://www.andymatuschak.org/xml-namespaces/sparkle", Local: "edSignature"}
+			if attrs[signatureName] != signature || attrs[xml.Name{Local: "length"}] != "1234" || attrs[xml.Name{Local: "url"}] != "https://builds.example.com/apps/app/builds/1.2.0-9/download/App.dmg" {
 				t.Fatalf("archive signature, length and URL must remain together: %v", attrs)
 			}
 			return

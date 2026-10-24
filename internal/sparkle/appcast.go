@@ -38,7 +38,7 @@ type Enclosure struct {
 	URL       string `xml:"url,attr"`
 	Length    int64  `xml:"length,attr"`
 	Type      string `xml:"type,attr"`
-	Signature string `xml:"sparkle:edDSASignature,attr,omitempty"`
+	Signature string `xml:"sparkle:edSignature,attr,omitempty"`
 }
 
 type buildMeta struct {
