@@ -100,6 +100,7 @@ frontpage-cli publish \
 | `--name` | No | Display name (defaults to slug, used for new apps) |
 | `--bundle-id` | No | Bundle identifier (used for new apps) |
 | `--min-os` | No | Minimum OS version |
+| `--sparkle-signature` | No | Base64 Ed25519 signature of the final macOS update archive |
 | `--keep-latest` | No | Remove older builds and prune their local Git LFS data after publishing |
 
 `--keep-latest` keeps the build being published and deletes every other build
@@ -170,6 +171,11 @@ https://builds.example.com/apps/{your-app-slug}/appcast.xml
 ```
 
 The CLI generates `appcast.xml` automatically when publishing macOS builds.
+Sign the final archive with Sparkle's `sign_update` tool and pass its signature
+using `--sparkle-signature`. The CLI writes it into `build.json` and the matching
+appcast enclosure together with the archive URL and byte count before committing
+and pushing. The optional flag accepts only macOS and a 64-byte base64 Ed25519
+signature; keep the private key in the signing machine's Keychain.
 
 ## Data Repo Structure
 

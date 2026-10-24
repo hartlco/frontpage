@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -33,6 +34,7 @@ func main() {
 	bundleID := fs.String("bundle-id", "", "Bundle ID (for new apps)")
 	name := fs.String("name", "", "Display name (for new apps, defaults to app slug)")
 	minOS := fs.String("min-os", "", "Minimum OS version")
+	sparkleSignature := fs.String("sparkle-signature", "", "Base64 Ed25519 signature of the final macOS update archive")
 	keepLatest := fs.Bool("keep-latest", false, "Remove all older builds for this app")
 
 	fs.Parse(os.Args[2:])
@@ -45,6 +47,9 @@ func main() {
 
 	if *platform != "ios" && *platform != "android" && *platform != "macos" {
 		log.Fatalf("invalid platform: %s (must be ios, android, or macos)", *platform)
+	}
+	if err := validateSparkleSignature(*platform, *sparkleSignature); err != nil {
+		log.Fatal(err)
 	}
 
 	// Validate file exists
@@ -79,6 +84,9 @@ func main() {
 	}
 	if *minOS != "" {
 		buildJSON["min_os_version"] = *minOS
+	}
+	if *sparkleSignature != "" {
+		buildJSON["sparkle_signature"] = *sparkleSignature
 	}
 	if err := writeJSON(filepath.Join(versionDir, "build.json"), buildJSON); err != nil {
 		log.Fatalf("failed to write build.json: %v", err)
@@ -176,6 +184,20 @@ func main() {
 			fmt.Println("Pruned local Git LFS cache")
 		}
 	}
+}
+
+func validateSparkleSignature(platform, signature string) error {
+	if signature == "" {
+		return nil
+	}
+	if platform != "macos" {
+		return fmt.Errorf("--sparkle-signature is only supported for macos")
+	}
+	decoded, err := base64.StdEncoding.Strict().DecodeString(signature)
+	if err != nil || len(decoded) != 64 {
+		return fmt.Errorf("--sparkle-signature must be a base64-encoded 64-byte Ed25519 signature")
+	}
+	return nil
 }
 
 func removeOlderBuilds(buildsDir, keep string) ([]string, error) {

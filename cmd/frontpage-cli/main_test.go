@@ -1,12 +1,29 @@
 package main
 
 import (
+	"encoding/base64"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
 )
+
+func TestSparkleSignatureRequiresMacOSAndValidEd25519Shape(t *testing.T) {
+	valid := base64.StdEncoding.EncodeToString(make([]byte, 64))
+	for _, test := range []struct {
+		platform, signature string
+		valid               bool
+	}{
+		{"macos", valid, true}, {"macos", "", true}, {"ios", "", true},
+		{"ios", valid, false}, {"macos", "not-base64", false},
+		{"macos", base64.StdEncoding.EncodeToString(make([]byte, 32)), false},
+	} {
+		if err := validateSparkleSignature(test.platform, test.signature); (err == nil) != test.valid {
+			t.Errorf("platform=%s signature=%q error=%v", test.platform, test.signature, err)
+		}
+	}
+}
 
 func TestRemoveOlderBuildsKeepsSelectedBuild(t *testing.T) {
 	buildsDir := t.TempDir()
